@@ -1,0 +1,3 @@
+wb_backend_homepage:
+    path:     /hello/{name}
+    defaults: { _controller: WbBackendBundle:Default:index }

@@ -1,0 +1,3 @@
+wb_backend:
+    resource: "@WbBackendBundle/Resources/config/routing.yml"
+    prefix:   /
