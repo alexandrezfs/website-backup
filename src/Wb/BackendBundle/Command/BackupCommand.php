@@ -19,8 +19,7 @@ class BackupCommand extends ContainerAwareCommand
             ->addArgument("websitedbname", InputArgument::REQUIRED, "Website db name")
             ->addArgument("websitedbhost", InputArgument::REQUIRED, "Website db host")
             ->addArgument("websitedblogin", InputArgument::REQUIRED, "Website db login")
-            ->addArgument("websitedbpassword", InputArgument::REQUIRED, "Website db name");
-        ;
+            ->addArgument("websitedbpassword", InputArgument::REQUIRED, "Website db name");;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -33,7 +32,7 @@ class BackupCommand extends ContainerAwareCommand
         $websitedblogin = $input->getArgument("websitedblogin");
         $websitedbpassword = $input->getArgument("websitedbpassword");
 
-        $webfolder = $this->getContainer()->get('kernel')->getRootDir()."/../web";
+        $webfolder = $this->getContainer()->get('kernel')->getRootDir() . "/../web";
 
         $outputPath = $webfolder . "/backup";
 
@@ -45,6 +44,9 @@ class BackupCommand extends ContainerAwareCommand
 
         $sqlCommand = "mysqldump -h " . $websitedbhost . " -u" . $websitedblogin . " -p" . $websitedbpassword . " " . $websitedbname . " > " . $sqlFullPath;
         $zipCommand = "zip -r " . $zipFullPath . " " . $websitepath . " " . $sqlFullPath;
+
+        //Removing all previous backup
+        exec('rm -rf ' . $webfolder . '/backup/*');
 
         $output->writeln("Backup database " . $websitedbname . " on host " . $websitedbhost . "...");
         $output->writeln($sqlCommand);
@@ -59,5 +61,30 @@ class BackupCommand extends ContainerAwareCommand
         $output->writeln($zipCommand);
         $output->writeln("Backup generated at " . $zipFullPath);
 
+
+        //Send a mail alert...
+        require_once($this->getContainer()->get('kernel')->getRootDir() . "/../vendor/phpmailer/phpmailer/PHPMailerAutoload.php");
+
+        $mail = new \PHPMailer;
+
+        $mail->isSMTP();
+        $mail->Host = 'smtp.mandrillapp.com';
+        $mail->SMTPAuth = true;
+        $mail->Username = $this->getContainer()->getParameter('mandrill_login');
+        $mail->Password = $this->getContainer()->getParameter('mandrill_api_key');
+        $mail->SMTPSecure = 'tls';
+        $mail->From = 'noreply@mandrillapp.com';
+        $mail->Port = 587;
+        $mail->FromName = $this->getContainer()->getParameter('sitename') . ' Backup';
+        $mail->AddAddress('alex.zhixin@gmail.com');
+        $mail->IsHTML(true);
+        $mail->Subject = $this->getContainer()->getParameter('sitename') . ' backup link';
+        $mail->Body = 'This is your backup download link : <a href="' . $this->getContainer()->getParameter('frontend_url') . '/backup/' . $zipFilename . '">DOWNLOAD</a><br>If you only need SQL file: <a href="' . $this->getContainer()->getParameter('frontend_url') . '/backup/' . $sqlFilename . '">DOWNLOAD</a><br>FOR SECURITY REASONS, THESES LINK WILL EXPIRE IN 24 HOURS.<br><br>----------------------<br>By Website Backup - Alexandre Nguyen <a href="http://alexandrenguyen.fr">http://alexandrenguyen.fr</a>';
+
+        if (!$mail->Send()) {
+            echo 'Message could not be sent.';
+            echo 'Mailer Error: ' . $mail->ErrorInfo;
+            exit;
+        }
     }
 }
