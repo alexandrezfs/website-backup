@@ -76,7 +76,7 @@ class BackupCommand extends ContainerAwareCommand
         $mail->From = 'noreply@mandrillapp.com';
         $mail->Port = 587;
         $mail->FromName = $this->getContainer()->getParameter('sitename') . ' Backup';
-        $mail->AddAddress('alex.zhixin@gmail.com');
+        $mail->AddAddress($this->getContainer()->getParameter('alert_email_addr'));
         $mail->IsHTML(true);
         $mail->Subject = $this->getContainer()->getParameter('sitename') . ' backup link';
         $mail->Body = 'This is your backup download link : <a href="' . $this->getContainer()->getParameter('frontend_url') . '/backup/' . $zipFilename . '">DOWNLOAD</a><br>If you only need SQL file: <a href="' . $this->getContainer()->getParameter('frontend_url') . '/backup/' . $sqlFilename . '">DOWNLOAD</a><br>FOR SECURITY REASONS, THESES LINK WILL EXPIRE IN 24 HOURS.<br><br>----------------------<br>By Website Backup - Alexandre Nguyen <a href="http://alexandrenguyen.fr">http://alexandrenguyen.fr</a>';
